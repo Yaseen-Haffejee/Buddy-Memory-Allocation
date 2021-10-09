@@ -306,13 +306,16 @@ void bfree(void* memory) {
 				}
 				// if the merged block is at the start of flists we update it like this
 				else{
+					// the block to be placed in the front will always be .next.next
 					struct head* Previous = Merged->next->next;
+					//set previous to null since it will be the first block in the list now
 					Previous->prev = NULL;
 					flists[i] = Previous;
 					Merged->level = i+1;
 					Merged->next = NULL;
 					Merged->prev = NULL;
 					Merged->status = Free;
+					// insert the merged block one level above
 					insert(Merged,i+1);
 					toFree = Merged;
 				}
@@ -373,71 +376,6 @@ void blockinfo(struct head* block){
 	printf("===================================================================\n");
 }
 
-void testNewFunction(struct head * head){
-	printf("===================================================================\n");
-	printf("Testing the new() function:\n");
-	blockinfo(head);
-	printf("\n");
-}
-
-void testLevelFunction(){
-	printf("===================================================================\n");
-	printf("Testing the level function: \n");
-	printf("===================================================================\n");
-    int leveltest1 = level(0);
-    printf("min required level = %d\n",leveltest1);
-    int leveltest2 = level(36);
-    printf("min required level = %d\n",leveltest2);
-    int leveltest3 = level(3300);
-    printf("min required level = %d\n",leveltest3);
-	printf("===================================================================\n \n");
-}
-
-void testSplitFunction(struct head* head){
-	printf("===================================================================\n");
-	printf("Testing the splitting function: \n");
-	printf("===================================================================\n");
-	struct head* sp = split(head);
-	printf("The old head is:%p\n",(void *)head);
-	printf("The new head is:%p\n",(void *)sp);
-	printf("The size separating is: %ld \n",(void *)sp - (void *)head);
-	primary(sp);
-	printf("===================================================================\n \n");
-}
-
-void testBuddyFunction(struct head* head){
-
-	printf("===================================================================\n");
-	printf("Testing the buddy function: \n");
-	printf("===================================================================\n");
-	struct head* bud = buddy(head);
-	printf("The head is:%p\n",(void *)head);
-	printf("The heads buddy is:%p\n",(void *)bud);
-	printf("===================================================================\n \n");
-
-}
-
-void testMergeFunction(struct head* child){
-	printf("===================================================================\n");
-	printf("Testing the merge function: \n");
-	printf("===================================================================\n");
-	struct head* newHead = primary(child);
-	printf("The old head is:%p\n",(void *)child);
-	printf("The new head after merging is:%p\n",(void *)newHead);
-	printf("===================================================================\n \n");
-}
-
-void testMagicAndHideFunction(struct head* head){
-	printf("===================================================================\n");
-	printf("Testing the magic function: \n");
-	printf("===================================================================\n");
-	struct head* newHead = hide(head);
-	printf("The old head is:%p\n",(void *)head);
-	printf("The head after hiding is:%p\n",(void *)newHead);
-	printf("The head after magic is:%p\n",(void *)magic(newHead));
-	printf("===================================================================\n \n");
-
-}
 
 void PrintFlists(){
 	printf("===================================================================\n \n");
@@ -447,30 +385,185 @@ void PrintFlists(){
 	printf("===================================================================\n \n");
 	
 }
-void test(){
-	struct head* head = new();
-
-	// void * b = balloc(476);
-	struct head * b1 = balloc(1);
-	struct head * b2 = balloc(2);
-	struct head * b3 = balloc(3);
-	struct head * b4 = balloc(2020);
-	struct head * b5 = balloc(476);
-
-	PrintFlists();
-	bfree(b3);
-	bfree(b2);
-	bfree(b1);
-	// bfree(b4);
-	// bfree(b5);
-	PrintFlists();
-
-	// printf("%p\n",(void*)magic(b1));
-	// printf("%p\n",(void*)flists[4]->next);
-	// printf("%d\n",getSize(head,flists[7]));
-	
+void testNewFunction(struct head * head){
+	printf("===================================================================\n");
+	printf("Testing the new() function:\n");
+	assert(head == HEAD);
+	//initially the block is free
+	assert(head->status == 0);
+	// block should be on level 7
+	assert(head->level == 7);
+	//flists at the largest level should be the entire block initially or if balloc has never been called
+	assert(flists[7]==head);
+	printf("All new() tests passed!\n");
+	printf("===================================================================\n");
+	printf("\n");
 }
 
+void testLevelFunction(){
+	printf("===================================================================\n");
+	printf("Testing the level function: \n");
+	printf("===================================================================\n");
+    int leveltest1 = level(0);
+    // if we ask what level 0 bytes should be on, it's level 0
+    assert(leveltest1 == 0);
+    int leveltest2 = level(36);
+    // 36+24 = 60 so level 1 should be the answer
+    assert(leveltest2 == 1);
+    int leveltest3 = level(3300);
+    // 3300+24 = 3324 which is level 7
+    assert(leveltest3 == 7);
+    printf("All Level Tests Passed!\n");
+	printf("===================================================================\n \n");
+}
+
+void testSplitFunction(struct head* head){
+	printf("===================================================================\n");
+	printf("Testing the splitting function: \n");
+	printf("===================================================================\n");
+	struct head* sp = split(head);
+    // checking heads are the same
+    assert(head == head);
+    // check that splitting gives the same results
+    assert((void*)sp == (void*)split(head));
+    // Distance betweem head and returned pointer after one split is 2048
+    assert(getSize(head,sp)==2048);
+    //merge them again
+	primary(sp);
+    printf("All split Tests Passed!\n");
+	printf("===================================================================\n \n");
+}
+
+void testBuddyFunction(struct head* head){
+	printf("===================================================================\n");
+	printf("Testing the buddy function: \n");
+	printf("===================================================================\n");
+    struct head* sp = split(head);
+	sp->level = 6;
+	struct head* bud = buddy(sp);
+	// after we split ,the buddy of the block we split is the result of the split
+	assert((void*)bud == (void*)head);
+	printf("All Buddy Tests Passed!\n");
+	primary(sp);
+	printf("===================================================================\n \n");
+
+}
+
+void testMergeFunction(struct head* head){
+	printf("===================================================================\n");
+	printf("Testing the merge function: \n");
+	printf("===================================================================\n");
+	struct head * child = split(head);
+	struct head* newHead = primary(child);
+	// splitting and then merging should point to the same struct before we split
+	assert((void*)newHead == (void*)head);
+	assert(getSize(head,newHead) == 0);
+	printf("All merge Tests Passed!\n");
+	printf("===================================================================\n \n");
+}
+
+void testMagicAndHideFunction(struct head* head){
+	printf("===================================================================\n");
+	printf("Testing the magic function: \n");
+	printf("===================================================================\n");
+	struct head* newHead = hide(head);
+	// the magic of what we hid, should be the same as the original
+	assert((void *)head==(void *)magic(newHead));
+	printf("All magic Tests Passed!\n");
+	printf("===================================================================\n \n");
+
+}
+
+void testGivenFunctions(){
+    struct head* h = new();
+    printf("Testing All the Given Functions!\n");
+    testLevelFunction();
+    testSplitFunction(h);
+    testBuddyFunction(h);
+    testMergeFunction(h);
+    testMagicAndHideFunction(h);
+	printf("All given helper functions work!\n");
+	printf("===================================================================\n \n");
+
+}
+void test(){
+	struct head* head = new();
+	testNewFunction(head);
+	
+}
+void testBallocAndBfree(){
+	printf("===================================================================\n");
+	printf("Testing Balloc and Bfree function: \n");
+	printf("===================================================================\n");
+	// this will spit and give us two blocks of size 2048
+	void *temp = balloc(2000); 
+	// temp van't be null since it's what we return
+    assert(temp != NULL);
+	//flists[6] is the first element of the list and is the same as temp
+    assert(flists[6] != NULL);
+	// status should be 1 since it is Taken
+    assert(flists[6]->status == 1);
+	// checking our function hides the head of the given block
+    assert(hide(flists[6]) == temp);
+	//checking the level is correct
+    assert(flists[6]->level == 6);
+	//the second link on level6 should be there with status 0 
+	assert(flists[6]->next!=NULL);
+	//checking the status of second link on level 6
+	assert(flists[6]->next->status==0);
+	//from level 0 to5 all should be null
+    for (int i = 0; i < 6; ++i) {
+        assert(flists[i] == NULL);
+    }
+	//flists at 7 should be null since we split the block
+	assert(flists[7]== NULL);
+
+	void* b1 = balloc(1);
+	void* b2 = balloc(2);
+	void* b3 = balloc(3);
+	// I should have 4 blocks on level 0 and zero blocks on level 1
+	assert(length(0) == 4);
+	assert(length(1) == 0);
+	for(int i =2;i<7;i++){
+		// every block from level 2 to 6 should only have one block 
+		assert(length(i)==1);
+		// the block should not be null
+		assert(flists[i]!= NULL);
+		// all the blocks should be free except for level 6 since that was the first block we allocated
+		if(i==6)
+			assert(flists[i]->status==1);
+			//all other blocks should be free
+		else
+			assert(flists[i]->status==0);
+	}
+	
+	// If i call bfree on b3 , i should have  2 blocks on level 0 and 1 on level 1 since i free it and it gets merged with it's primary and moved up a level
+	bfree(b3);
+	assert(length(0)==2);
+	assert(length(1)==1);
+
+	//calling bfree of b1 and b2 will cause all the unallocated blocks on bigger levels to get merged with their primary and move up a level
+	// the result will be two blocks on level 6 since there is an allocated block on level 6 and we can't merge it 
+	bfree(b1);
+	bfree(b2);
+	for(int i=0; i<6;i++){
+		// all levels from 0-5 inclusive are empty and thus NULL
+		assert(length(i)==0);
+		assert(flists[i]==NULL);
+	}
+
+	void * b = balloc(0);
+	//calling balloc of 0 should return null 
+	assert(b == NULL);
+
+	
+
+    
+	printf("All Balloc and Bfree Tests Passed!\n");
+	printf("===================================================================\n \n");
+
+
+}
 
 
 

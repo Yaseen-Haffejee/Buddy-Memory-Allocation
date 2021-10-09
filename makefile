@@ -1,3 +1,5 @@
+run: final
+	./final
 
 final: buddy.o test.o
 	gcc buddy.o test.o -o final

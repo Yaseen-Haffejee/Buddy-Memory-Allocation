@@ -1,10 +1,8 @@
 #include <stddef.h>
 #ifndef buddy_h
 # define buddy_h
-
+#define LEVELS 8
 //put your additional function headers here
-
-
 
 struct head *new();
 struct head *buddy(struct head*);
@@ -19,7 +17,8 @@ void dispblocklevel(struct head*);
 void dispblockstatus(struct head*);
 void blockinfo(struct head*);
 void test();
-
+void testGivenFunctions();
+void testBallocAndBfree();
 #endif
 
 

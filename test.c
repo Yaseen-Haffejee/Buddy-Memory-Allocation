@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <assert.h>
 
 void GivenTests(){
     void *init = sbrk(0);
@@ -44,7 +45,9 @@ void GivenTests(){
 
 int main(){
 
-    //GivenTests();
+    // GivenTests();
+    testGivenFunctions();
     test();
+    testBallocAndBfree();
     return 0;
 }
